@@ -34,3 +34,4 @@ class Maze:
         """
         print(f"Maze has {self.rows} rows and {self.cols} columns.")
 
+
