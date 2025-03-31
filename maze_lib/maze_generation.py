@@ -50,3 +50,4 @@ def generate_maze_dfs(maze: Maze, start_row=0, start_col=0):
     # Start the DFS from the specified cell
     dfs(start_row, start_col)
 
+
