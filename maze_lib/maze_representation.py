@@ -20,7 +20,7 @@ class Maze:
             for c in range(cols):
                 # each cell has walls: up, right, down, left
                 cell_walls = {
-                    "up":True,
+                    "up":True, # means "closed"
                     "down":True,
                     "left":True,
                     "right":True,
