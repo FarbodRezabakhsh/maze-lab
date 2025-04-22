@@ -1,14 +1,10 @@
-
-
-"""
-Contains the Maze class to represent a grid-based maze.
-Each cell tracks whether its four walls (up/down/left/right) are present.
-"""
 from dataclasses import dataclass
 import numpy as np
+from typing import Any, Tuple
 
+# Wall bit‑flags
 UP, RIGHT, DOWN, LEFT = 1, 2, 4, 8
-ALL_WALLS = UP | DOWN | LEFT | RIGHT # All walls present (0b1111)
+ALL_WALLS = UP | RIGHT | DOWN | LEFT  # 0b1111
 
 @dataclass
 class MazeCell:
@@ -20,31 +16,29 @@ class MazeCell:
     def remove_wall(self, direction: int) -> None:
         self.walls &= ~direction
 
-    def add_walls(self, direction: int) -> None:
+    def add_wall(self, direction: int) -> None:
         self.walls |= direction
 
-
 class Maze:
-    def __init__(self, rows, cols):
-        """
-            Initialize the maze with a given number of rows and columns.
-            By default, every cell starts fully enclosed by walls.
-        """
+    rows: int
+    cols: int
+    grid: np.ndarray[Any, np.dtype[object]]  # 2D array of MazeCell
+
+    def __init__(self, rows: int, cols: int) -> None:
         self.rows = rows
         self.cols = cols
-        # store maze as NumPy ndarray of MazeCell objects
-        self.grid = np.array([[MazeCell() for _ in range(cols)] for _ in range(rows)], dtype=object)
+        # object‑dtype ndarray of MazeCell
+        self.grid = np.array(
+            [[MazeCell() for _ in range(cols)] for _ in range(rows)],
+            dtype=object
+        )
 
-    def describe(self):
-        """
-        Print a brief description of the maze dimensions and wall status.
-        """
+    def describe(self) -> None:
         print(f"Maze has {self.rows} rows and {self.cols} columns.")
 
-    def render_ascii(self):
+    def render_ascii(self) -> None:
         top_border = " _" * self.cols
         print(top_border)
-
         for r in range(self.rows):
             row_str = "|"
             for c in range(self.cols):

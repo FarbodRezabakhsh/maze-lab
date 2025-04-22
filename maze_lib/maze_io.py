@@ -1,20 +1,19 @@
 
-"""
-Provides functions to serialize (save) and deserialize (load) a Maze.
-"""
 import json
-from maze_lib.maze_representation import Maze
+from maze_lib.maze_representation import Maze, MazeCell
 
-
-def save_maze(maze: Maze, filename: str):
+def save_maze(maze: Maze, filename: str) -> None:
     """
     Save the Maze object to a JSON file.
-    We store rows, cols, and the grid (the wall info for each cell).
+    We store rows, cols, and the grid as a nested list of wall‐bit integers.
     """
     data = {
         "rows": maze.rows,
         "cols": maze.cols,
-        "grid": maze.grid  # grid is a 2D list of dicts with up/right/down/left
+        "grid": [
+            [cell.walls for cell in row]   # grab the bitmask int
+            for row in maze.grid
+        ]
     }
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -29,10 +28,12 @@ def load_maze(filename: str) -> Maze:
 
     rows = data["rows"]
     cols = data["cols"]
-    grid_data = data["grid"]  # 2D list of dicts
+    grid_data = data["grid"]  # nested lists of ints
 
-    # Create a Maze object with the same dimensions
     maze = Maze(rows, cols)
-    # Overwrite the default grid (all True) with what we loaded
-    maze.grid = grid_data
+    # overwrite each cell with the saved wall‐bit
+    for r, row in enumerate(grid_data):
+        for c, walls in enumerate(row):
+            maze.grid[r, c] = MazeCell(walls)
+
     return maze
