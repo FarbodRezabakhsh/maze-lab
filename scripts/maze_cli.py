@@ -14,6 +14,9 @@ sys.path.insert(0, PROJECT_ROOT)
 from maze_lib.maze_representation import Maze
 from maze_lib.maze_generation import generate_maze_dfs, check_maze_connectivity
 from maze_lib.maze_io import save_maze, load_maze
+from maze_lib.maze_serializer import to_graph
+from maze_lib.maze_solver import solve_backtrack, path_to_directions
+
 
 
 def generate_command(args):
@@ -21,8 +24,9 @@ def generate_command(args):
     Subcommand: Generate a maze of given rows x cols.
     Optionally save it to a file (--output).
     """
-    # If you want consistent results, you can do random.seed(42) or similar
     maze = Maze(args.rows, args.cols)
+    if args.seed is not None:
+        random.seed(args.seed)
     generate_maze_dfs(maze, 0, 0)
 
     print(f"Generated a {args.rows}x{args.cols} maze (DFS).")
@@ -43,6 +47,8 @@ def validate_command(args):
     else:
         # Generate new Maze in memory
         maze = Maze(args.rows, args.cols)
+        if args.seed is not None:
+            random.seed(args.seed)
         generate_maze_dfs(maze, 0, 0)
         print(f"Generated a {args.rows}x{args.cols} maze (DFS) in memory.")
 
@@ -62,18 +68,46 @@ def render_command(args):
         print(f"Loaded maze from {args.input}.")
     else:
         maze = Maze(args.rows, args.cols)
+        if args.seed is not None:
+            random.seed(args.seed)
         generate_maze_dfs(maze, 0, 0)
         print(f"Generated a {args.rows}x{args.cols} maze in memory.")
 
     print("ASCII representation:\n")
     maze.render_ascii()
 
+def solve_command(args: argparse.Namespace) -> None:
+    if args.input:
+        maze = load_maze(args.input)
+        print(f"Loaded maze from {args.input}.")
+    else:
+        maze = Maze(args.rows, args.cols)
+        if args.seed is not None:
+            random.seed(args.seed)
+        generate_maze_dfs(maze, 0, 0)
+        print(f"Generated a {args.rows}×{args.cols} maze in memory.")
+    graph = to_graph(maze)
+    start, goal = (0, 0), (maze.rows - 1, maze.cols - 1)
+    path = solve_backtrack(graph, start, goal)
+    dirs = path_to_directions(path)
+
+    print("Path:", " -> ".join(f"{p}" for p in path))
+    print("Directions:", ", ".join(dirs))
+    print("\nMaze with path overlay:\n")
+    maze.render_ascii(path)
+
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CLI tool for Maze tasks: generate, validate, or render."
+        description="CLI tool for Maze tasks: generate, validate, render, or solve."
     )
-    subparsers = parser.add_subparsers(dest='command', required=True)
+    parser.add_argument(
+        "--seed", type=int,
+        help="Optional random seed for reproducibility"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     # generate subcommand
     generate_parser = subparsers.add_parser('generate', help='Generate a solvable maze using DFS.')
@@ -97,6 +131,12 @@ def main():
     render_parser.add_argument('--input', type=str,
                                help='File path to load a Maze (JSON). If not provided, a new Maze is generated.')
     render_parser.set_defaults(func=render_command)
+
+    solve = subparsers.add_parser("solve", help="Solve a maze and show the path")
+    solve.add_argument("--rows", type=int, default=5)
+    solve.add_argument("--cols", type=int, default=5)
+    solve.add_argument("--input", type=str, help="Path to load maze JSON")
+    solve.set_defaults(func=solve_command)
 
     args = parser.parse_args()
     args.func(args)
